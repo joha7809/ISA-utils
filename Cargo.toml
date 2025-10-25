@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "isa-core",
+    "isa-encoder",
+    "isa-vm",
+]
+resolver = "2"
