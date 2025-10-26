@@ -1,6 +1,6 @@
+mod assembler_types;
 mod encoder;
 mod errors;
-mod isa;
 mod lexer;
 mod parser;
 use clap::*;

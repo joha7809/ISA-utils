@@ -1,7 +1,6 @@
 use crate::{errors::ParseError, lexer::Span};
 
 use isa_core::traits::ToResolvedInstr;
-// Re-export core ISA types from isa-core
 pub use isa_core::{types::InstrFormat, types::Opcode};
 
 /// Assembler-specific operand type that includes label references
