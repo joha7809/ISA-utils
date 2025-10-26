@@ -1,30 +1,27 @@
 use crate::FromStr;
+use strum_macros::{EnumIter, FromRepr};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(clippy::upper_case_acronyms)]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter, FromRepr)]
 pub enum Opcode {
-    ADD,
-    SUB,
-    MULT,
-    ADDI,
-    SUBI,
-    OR,
-    AND,
-    NOT,
-
-    // DATA
-    LI,
-    LD,
-    SD,
-
-    // Control
-    JR,
-    JEQ,
-    JLTV,
-    JGT,
-    JETV,
-    NOP,
-    END,
+    NOP = 0b00000,
+    ADD = 0b00001,
+    SUB = 0b00010,
+    MULT = 0b00011,
+    ADDI = 0b00100,
+    SUBI = 0b00101,
+    OR = 0b00110,
+    NOT = 0b00111,
+    AND = 0b10000,
+    LI = 0b01000,
+    LD = 0b01001,
+    SD = 0b01010,
+    JR = 0b01011,
+    JEQ = 0b01100,
+    JLTV = 0b01101,
+    JGT = 0b01110,
+    JETV = 0b01111,
+    END = 0b11111,
 }
 
 /// Decoded instruction - useful for VM
@@ -80,6 +77,13 @@ impl Operand {
 }
 
 impl Opcode {
+    pub const fn code(self) -> u8 {
+        self as u8
+    }
+
+    pub fn from_code(code: u8) -> Option<Self> {
+        Self::from_repr(code)
+    }
     pub fn to_string(self) -> &'static str {
         match self {
             Opcode::ADD => "ADD",
@@ -100,60 +104,6 @@ impl Opcode {
             Opcode::JETV => "JETV",
             Opcode::NOP => "NOP",
             Opcode::END => "END",
-        }
-    }
-
-    /// Returns the 5-bit binary encoding for this opcode
-    pub const fn code(self) -> u8 {
-        match self {
-            // ALU
-            Opcode::ADD => 0b00001,
-            Opcode::SUB => 0b00010,
-            Opcode::MULT => 0b00011,
-            Opcode::ADDI => 0b00100,
-            Opcode::SUBI => 0b00101,
-            Opcode::OR => 0b00110,
-            Opcode::NOT => 0b00111,
-            Opcode::AND => 0b10000,
-
-            // DATA TRANSFER
-            Opcode::LI => 0b01000,
-            Opcode::LD => 0b01001,
-            Opcode::SD => 0b01010,
-
-            // CONTROL
-            Opcode::JR => 0b01011,
-            Opcode::JEQ => 0b01100,
-            Opcode::JLTV => 0b01101,
-            Opcode::JGT => 0b01110,
-            Opcode::JETV => 0b01111,
-            Opcode::NOP => 0b00000,
-            Opcode::END => 0b11111,
-        }
-    }
-
-    /// Decode a 5-bit opcode value back to an Opcode enum
-    pub fn from_code(code: u8) -> Option<Opcode> {
-        match code {
-            0b00001 => Some(Opcode::ADD),
-            0b00010 => Some(Opcode::SUB),
-            0b00011 => Some(Opcode::MULT),
-            0b00100 => Some(Opcode::ADDI),
-            0b00101 => Some(Opcode::SUBI),
-            0b00110 => Some(Opcode::OR),
-            0b00111 => Some(Opcode::NOT),
-            0b10000 => Some(Opcode::AND),
-            0b01000 => Some(Opcode::LI),
-            0b01001 => Some(Opcode::LD),
-            0b01010 => Some(Opcode::SD),
-            0b01011 => Some(Opcode::JR),
-            0b01100 => Some(Opcode::JEQ),
-            0b01101 => Some(Opcode::JLTV),
-            0b01110 => Some(Opcode::JGT),
-            0b01111 => Some(Opcode::JETV),
-            0b00000 => Some(Opcode::NOP),
-            0b11111 => Some(Opcode::END),
-            _ => None,
         }
     }
 
