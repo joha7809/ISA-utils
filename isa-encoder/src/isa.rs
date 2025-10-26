@@ -44,12 +44,12 @@ impl UnresolvedInstruction {
         if self.operands.is_empty() {
             return self.opcode.span;
         }
-        let start_span = self.operands.first().unwrap();
+        let start_span = self.opcode.span;
         let end_span = self.operands.last().unwrap();
         Span {
-            start: start_span.span.start,
+            start: start_span.start,
             end: end_span.span.end,
-            line: start_span.span.line,
+            line: start_span.line,
         }
     }
 }
@@ -92,7 +92,7 @@ fn validate_pattern(
 ) -> Result<(), ParseError> {
     if ops.len() != expected_count {
         return Err(ParseError::OperandCountMismatch {
-            expected: expected_count,
+            expected_count,
             found: ops.len(),
             span: *instr_span,
         });
@@ -103,12 +103,14 @@ fn validate_pattern(
             (UnresolvedOperand::Register(_), OperandType::Reg)
             | (UnresolvedOperand::Immediate(_), OperandType::Imm) => continue,
             _ => return Err(ParseError::OperandTypeMismatch { span: op.span }),
+            //TODO: return expected format
         }
     }
     Ok(())
 }
 
-// Trait to add validation to InstrFormat in the assembler
+/// Trait to add validation to InstrFormat in the assembler
+/// validates that the operands of a instruction matches the given operands
 pub trait InstrFormatValidator {
     fn validate(&self, ops: &[Spanned<UnresolvedOperand>], span: &Span) -> Result<(), ParseError>;
 }

@@ -18,7 +18,7 @@ pub enum ParseError {
         span: Span,
     },
     OperandCountMismatch {
-        expected: usize,
+        expected_count: usize,
         found: usize,
         span: Span,
     },
@@ -63,13 +63,13 @@ impl ParseError {
                 )
             }
             ParseError::OperandCountMismatch {
-                expected,
+                expected_count,
                 found,
                 span,
             } => {
                 format!(
                     "Parse Error: Operand count mismatch, expected {}, found {}\n{}",
-                    expected,
+                    expected_count,
                     found,
                     format_error_location(source, span, "wrong number of operands")
                 )
@@ -87,7 +87,7 @@ impl ParseError {
                 )
             }
             ParseError::InvalidInstruction => {
-                "Something went wrong when resolving an Insruction. This should not happen!"
+                "Something went wrong when resolving an Insruction. This should never happen, as other errors should occur!"
                     .to_string()
             }
         }
@@ -130,7 +130,7 @@ impl std::fmt::Display for ParseError {
                 )
             }
             ParseError::OperandCountMismatch {
-                expected,
+                expected_count,
                 found,
                 span,
             } => {
@@ -138,7 +138,7 @@ impl std::fmt::Display for ParseError {
                     f,
                     "Parse Error at line {}: Operand count mismatch, expected {}, found {}",
                     span.line + 1,
-                    expected,
+                    expected_count,
                     found
                 )
             }
@@ -164,7 +164,6 @@ impl std::fmt::Display for ParseError {
 }
 
 /// Format an error with source code context and highlighting
-
 fn format_error_location(source: &str, span: &Span, message: &str) -> String {
     let lines: Vec<&str> = source.lines().collect();
 
