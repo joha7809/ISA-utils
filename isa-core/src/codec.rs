@@ -3,7 +3,7 @@ use crate::{
     consts::REGISTER_LIMIT,
     layout::{FieldKind, InstructionLayout},
     traits::{Decodable, Encodable},
-    types::ResolvedInstruction,
+    types::{InstrFormat, Opcode, Operand, ResolvedInstruction},
 };
 
 impl Encodable for ResolvedInstruction {
@@ -40,11 +40,65 @@ impl Encodable for ResolvedInstruction {
     }
 }
 
-impl Decodable for ResolvedInstruction {
+impl Decodable for u32 {
     type EncodingError = EncodeError;
 
-    fn decode(&self) -> Result<u32, Self::EncodingError> {
-        todo!()
+    fn decode(&self) -> Result<ResolvedInstruction, Self::EncodingError> {
+        // First we extract the opcode, this is always in the end of the word, 31-26
+        let word = *self;
+        let op_num = get_bits(word, 31, 27) as u8;
+        let opcode = Opcode::from_code(op_num).ok_or(EncodeError::InvalidOpcode(op_num))?;
+        let format = opcode.instruction_format();
+
+        let operands = match format {
+            InstrFormat::R3 => {
+                let r1 = get_bits(word, 26, 22) as u8;
+                let r2 = get_bits(word, 21, 17) as u8;
+                let r3 = get_bits(word, 16, 12) as u8;
+                vec![
+                    Operand::Register(r1),
+                    Operand::Register(r2),
+                    Operand::Register(r3),
+                ]
+            }
+            InstrFormat::R2 => {
+                let r1 = get_bits(word, 26, 22) as u8;
+                let r2 = get_bits(word, 21, 17) as u8;
+                vec![Operand::Register(r1), Operand::Register(r2)]
+            }
+            InstrFormat::RI => {
+                let r1 = get_bits(word, 26, 22) as u8;
+                let imm = get_bits(word, 21, 0) as usize;
+                vec![Operand::Register(r1), Operand::Immediate(imm)]
+            }
+            InstrFormat::RRI => {
+                let r1 = get_bits(word, 26, 22) as u8;
+                let r2 = get_bits(word, 21, 17) as u8;
+                let imm = get_bits(word, 16, 0) as usize;
+                vec![
+                    Operand::Register(r1),
+                    Operand::Register(r2),
+                    Operand::Immediate(imm),
+                ]
+            }
+            InstrFormat::RII => {
+                let r1 = get_bits(word, 26, 22) as u8;
+                let imm1 = get_bits(word, 21, 11) as usize;
+                let imm2 = get_bits(word, 10, 0) as usize;
+                vec![
+                    Operand::Register(r1),
+                    Operand::Immediate(imm1),
+                    Operand::Immediate(imm2),
+                ]
+            }
+            InstrFormat::I => {
+                let imm = get_bits(word, 26, 0) as usize;
+                vec![Operand::Immediate(imm)]
+            }
+            InstrFormat::NoOP => vec![],
+        };
+
+        Ok(ResolvedInstruction { opcode, operands })
     }
 }
 
@@ -52,6 +106,7 @@ impl Decodable for ResolvedInstruction {
 pub enum EncodeError {
     RegisterOutOfRange(u8),
     ImmediateOutOfRange { bits: u8, value: usize },
+    InvalidOpcode(u8),
 }
 
 impl std::fmt::Display for EncodeError {
@@ -69,6 +124,9 @@ impl std::fmt::Display for EncodeError {
                 "Encode error: immediate value {} does not fit in {} bits",
                 value, bits
             ),
+            EncodeError::InvalidOpcode(word) => {
+                write!(f, "Encode error: Opcode for {} not found!", word)
+            }
         }
     }
 }
