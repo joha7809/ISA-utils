@@ -41,7 +41,10 @@ impl From<&crate::types::ResolvedInstruction> for InstructionLayout {
         // Since Instruction has been resolved we are sure it matches its format!
         let format = value.opcode.instruction_format();
         let opcode_value = value.opcode.code();
-        assert!(value.operands.len() == format.size() - 1); // -1 since opcode is not in operands vec
+        debug_assert!(
+            value.operands.len() == format.size() - 1,
+            "Operand length does not match format, should never happen!"
+        ); // -1 since opcode is not in operands vec
 
         let mut fields = Vec::new();
 
@@ -53,7 +56,8 @@ impl From<&crate::types::ResolvedInstruction> for InstructionLayout {
             lo_bit: 27,
         });
 
-        // Ugly code incomming
+        // Ugly code incomming, can be made much more conscice but i was lazy...
+        // TODO: De-ugly code plz
         match format {
             InstrFormat::R2 => {
                 let r1 = to_u32(value.operands[0]);
