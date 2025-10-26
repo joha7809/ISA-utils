@@ -12,5 +12,5 @@ pub trait Encodable {
 
 pub trait Decodable {
     type EncodingError;
-    fn decode(&self) -> Result<u32, Self::EncodingError>;
+    fn decode(&self) -> Result<ResolvedInstruction, Self::EncodingError>;
 }
