@@ -2,9 +2,9 @@
 /// This module defines the bit layout for all instruction formats in one place
 use crate::types::InstrFormat;
 
-// ============================================================================
+// =========================================================================================
 // SINGLE SOURCE OF TRUTH: All bit ranges defined here
-// ============================================================================
+// =========================================================================================
 
 // Opcode always occupies bits [31:27]
 pub const OPCODE_RANGE: BitRange = BitRange::new(31, 27);
@@ -21,9 +21,10 @@ const IMM_17_RANGE: BitRange = BitRange::new(16, 0); // RRI format: 17 bits
 const IMM_11_HIGH_RANGE: BitRange = BitRange::new(21, 11); // RII format: first 11 bits
 const IMM_11_LOW_RANGE: BitRange = BitRange::new(10, 0); // RII format: second 11 bits
 
-// ============================================================================
-// Format specifications as static slices
-// ============================================================================
+// =========================================================================================
+// Format specifications as static slices.
+// These specify what each machine instrcution type expect of arguments and their bit ranges
+// =========================================================================================
 
 const R2_SPEC: &[FieldSpec] = &[
     FieldSpec::Opcode(OPCODE_RANGE),
@@ -73,15 +74,6 @@ pub struct FormatSpec {
     pub format: InstrFormat,
     pub fields: &'static [FieldSpec],
 }
-
-// pub struct BitField {
-//     pub kind: FieldKind,
-//     pub value: u32,
-//     pub hi_bit: u8, // highest bit position
-//     pub lo_bit: u8, // lowest bit position
-//                     // 32 bits, 0 to 31.
-//                     // hi and low are used to extract or set bits in the instruction encoding.
-// }
 
 /// Specifies the bit range for a field in an instruction
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

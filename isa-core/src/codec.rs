@@ -14,6 +14,15 @@ impl Encodable for ResolvedInstruction {
         let format = self.opcode.instruction_format();
         let format_spec = get_format_spec(format);
 
+        // The length of Instruction and its format_spec should always match by design, but lets
+        // still verify
+        debug_assert_eq!(
+            format_spec.fields.len(),
+            1 + self.operands.len(),
+            "Format spec mismatch for {:?}",
+            format
+        );
+
         // Iterator of values starting with opcode value
         let val_iter = std::iter::once(self.opcode.code() as usize)
             .chain(self.operands.iter().map(|o| o.get_val()));
