@@ -1,7 +1,7 @@
 use crate::{
     bits::*,
     consts::REGISTER_LIMIT,
-    layout::{FieldKind, InstructionLayout},
+    format_spec::{FieldSpec, get_format_spec},
     traits::{Decodable, Encodable},
     types::{InstrFormat, Opcode, Operand, ResolvedInstruction},
 };
@@ -11,19 +11,23 @@ impl Encodable for ResolvedInstruction {
 
     /// Encodes the instruction to 32 bit.
     fn encode(&self) -> Result<u32, EncodeError> {
-        let layout: InstructionLayout = self.into();
-        let mut res: u32 = 0;
-        for bitfield in layout.fields {
-            let val = bitfield.value; // i think this has implicit copy?
-            let kind = &bitfield.kind;
+        let format = self.opcode.instruction_format();
+        let format_spec = get_format_spec(format);
 
-            if !fits_in_bits(val as usize, bitfield.width()) {
+        // Iterator of values starting with opcode value
+        let val_iter = std::iter::once(self.opcode.code() as usize)
+            .chain(self.operands.iter().map(|o| o.get_val()));
+
+        let mut res: u32 = 0;
+        for (field, val) in format_spec.fields.iter().zip(val_iter) {
+            let range = field.bit_range();
+            if !fits_in_bits(val, range.width()) {
                 // Match could be replaced with instant error, but lets do it the proper way :)
-                match kind {
-                    FieldKind::Immediate => {
+                match field {
+                    FieldSpec::Immediate(bitrange) => {
                         return Err(EncodeError::ImmediateOutOfRange {
-                            bits: bitfield.width(),
-                            value: val as usize,
+                            bits: bitrange.width(),
+                            value: val,
                         });
                     }
                     // The rest are unreachable. The value of opcode is derived from its to_code
@@ -33,7 +37,7 @@ impl Encodable for ResolvedInstruction {
                 }
             }
 
-            set_bits(&mut res, bitfield.hi_bit, bitfield.lo_bit, bitfield.value);
+            set_bits(&mut res, range.hi, range.lo, val as u32);
         }
 
         Ok(res)
@@ -44,59 +48,40 @@ impl Decodable for u32 {
     type EncodingError = EncodeError;
 
     fn decode(&self) -> Result<ResolvedInstruction, Self::EncodingError> {
-        // First we extract the opcode, this is always in the end of the word, 31-26
         let word = *self;
-        let op_num = get_bits(word, 31, 27) as u8;
+
+        // Retrieve the u8 num of the opcode
+        let opcode_range = crate::format_spec::OPCODE_RANGE;
+        let op_num = get_bits(word, opcode_range.hi, opcode_range.lo) as u8;
+
         let opcode = Opcode::from_code(op_num).ok_or(EncodeError::InvalidOpcode(op_num))?;
         let format = opcode.instruction_format();
 
-        let operands = match format {
-            InstrFormat::R3 => {
-                let r1 = get_bits(word, 26, 22) as u8;
-                let r2 = get_bits(word, 21, 17) as u8;
-                let r3 = get_bits(word, 16, 12) as u8;
-                vec![
-                    Operand::Register(r1),
-                    Operand::Register(r2),
-                    Operand::Register(r3),
-                ]
+        // Get the format specification for this instruction format
+        let format_spec = get_format_spec(format);
+        let mut operands = Vec::new();
+
+        // Extract operands based on format specification
+        for field_spec in format_spec.fields {
+            let bit_range = field_spec.bit_range();
+
+            match field_spec {
+                FieldSpec::Opcode(_) => {
+                    // Already extracted, skip
+                }
+                FieldSpec::Register(_) => {
+                    let reg = get_bits(word, bit_range.hi, bit_range.lo) as u8;
+                    operands.push(Operand::Register(reg));
+                }
+                FieldSpec::Immediate(_) => {
+                    // For NoOP format, skip the padding immediate
+                    if format != InstrFormat::NoOP {
+                        let imm = get_bits(word, bit_range.hi, bit_range.lo) as usize;
+                        operands.push(Operand::Immediate(imm));
+                    }
+                }
             }
-            InstrFormat::R2 => {
-                let r1 = get_bits(word, 26, 22) as u8;
-                let r2 = get_bits(word, 21, 17) as u8;
-                vec![Operand::Register(r1), Operand::Register(r2)]
-            }
-            InstrFormat::RI => {
-                let r1 = get_bits(word, 26, 22) as u8;
-                let imm = get_bits(word, 21, 0) as usize;
-                vec![Operand::Register(r1), Operand::Immediate(imm)]
-            }
-            InstrFormat::RRI => {
-                let r1 = get_bits(word, 26, 22) as u8;
-                let r2 = get_bits(word, 21, 17) as u8;
-                let imm = get_bits(word, 16, 0) as usize;
-                vec![
-                    Operand::Register(r1),
-                    Operand::Register(r2),
-                    Operand::Immediate(imm),
-                ]
-            }
-            InstrFormat::RII => {
-                let r1 = get_bits(word, 26, 22) as u8;
-                let imm1 = get_bits(word, 21, 11) as usize;
-                let imm2 = get_bits(word, 10, 0) as usize;
-                vec![
-                    Operand::Register(r1),
-                    Operand::Immediate(imm1),
-                    Operand::Immediate(imm2),
-                ]
-            }
-            InstrFormat::I => {
-                let imm = get_bits(word, 26, 0) as usize;
-                vec![Operand::Immediate(imm)]
-            }
-            InstrFormat::NoOP => vec![],
-        };
+        }
 
         Ok(ResolvedInstruction { opcode, operands })
     }

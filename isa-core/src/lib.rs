@@ -6,6 +6,6 @@ use std::str::FromStr;
 pub mod bits;
 pub mod codec;
 pub mod consts;
-pub mod layout;
+pub mod format_spec;
 pub mod traits;
 pub mod types;

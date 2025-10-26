@@ -1,4 +1,4 @@
-use crate::{FromStr, bits};
+use crate::FromStr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(clippy::upper_case_acronyms)]
@@ -37,6 +37,8 @@ pub struct ResolvedInstruction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(clippy::upper_case_acronyms)]
+/// Instruction Formats, these are dependant on the opcode, and specify how the 32 bit word should
+/// be interpreted.
 pub enum InstrFormat {
     R2,   // opcode + reg + reg
     R3,   // opcode + reg + reg + reg
@@ -66,6 +68,15 @@ impl InstrFormat {
 pub enum Operand {
     Register(u8),     // 0..31
     Immediate(usize), // Value that fits in the instruction format
+}
+
+impl Operand {
+    pub fn get_val(self) -> usize {
+        match self {
+            Self::Register(n) => n as usize,
+            Self::Immediate(n) => n,
+        }
+    }
 }
 
 impl Opcode {
