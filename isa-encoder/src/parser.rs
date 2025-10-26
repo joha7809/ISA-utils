@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use isa_core::{consts::REGISTER_LIMIT, traits::ToResolvedInstr, types::ResolvedInstruction};
 
 use crate::{
+    assembler_types::{InstrFormatValidator, Spanned, UnresolvedInstruction, UnresolvedOperand},
     errors::ParseError,
-    isa::{InstrFormatValidator, Spanned, UnresolvedInstruction, UnresolvedOperand},
     lexer::{Token, TokenKind},
 };
 
@@ -32,9 +32,9 @@ impl Parser {
         let mut instructions = Vec::with_capacity(20);
         let mut labels = HashMap::with_capacity(2);
 
-        // if self.peek().is_none() {
-        //     return Err(ParseError::UnexpectedEndOfInput);
-        // }
+        if self.peek().is_none() {
+            return Err(ParseError::UnexpectedEndOfInput);
+        }
 
         while let Some(token) = self.next() {
             match token.kind {

@@ -1,7 +1,7 @@
 use isa_core::consts::REGISTER_LIMIT;
 use std::{fmt::Display, str::FromStr};
 
-use crate::isa::{self, Opcode};
+use crate::assembler_types::{self, Opcode};
 
 /// Represents one lexical unit (token) in the assembly code.
 #[derive(Debug, Clone, PartialEq)]
@@ -142,6 +142,7 @@ impl<'a> Lexer<'a> {
         // Safely consume 'R'
         let r = self.chars.next();
         debug_assert!(r.is_some() && r.unwrap().1 == 'R');
+
         let mut digits: String = String::with_capacity(2);
 
         while let Some(&(_, c)) = self.chars.peek() {
@@ -176,6 +177,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
+        //TODO: Instead of unwraping return error, as it can overflow
         let value = number.parse::<usize>().unwrap();
         Token {
             kind: TokenKind::Immediate(value),
@@ -219,7 +221,7 @@ impl<'a> Lexer<'a> {
 
         let kind = if ident.ends_with(':') {
             TokenKind::LabelDef(ident.trim_end_matches(':').to_string())
-        } else if let Ok(opcode) = isa::Opcode::from_str(&ident) {
+        } else if let Ok(opcode) = assembler_types::Opcode::from_str(&ident) {
             TokenKind::Opcode(opcode)
         } else {
             TokenKind::LabelRef(ident)
@@ -235,7 +237,7 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::isa::Opcode;
+    use crate::assembler_types::Opcode;
 
     fn lex_tokens(input: &str) -> Vec<TokenKind> {
         Lexer::new(input)
