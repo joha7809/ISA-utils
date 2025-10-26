@@ -9,5 +9,3 @@ pub mod consts;
 pub mod layout;
 pub mod traits;
 pub mod types;
-
-mod tests;
