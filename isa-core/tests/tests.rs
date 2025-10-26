@@ -62,11 +62,11 @@ fn test_bit_manipulation() {
 
 // Test a immediate value that is too big
 #[test]
-fn test_immediate_too_large() {
+fn test_signed_immediate_too_large() {
     let instr = ResolvedInstruction {
         opcode: Opcode::LI,
         // we need number that is too large for 22 bits
-        operands: vec![Operand::Register(0), Operand::Immediate(usize::MAX)],
+        operands: vec![Operand::Register(0), Operand::Immediate(isize::MAX)],
     };
     let result = instr.encode();
     println!("Error: {:?}", result);
@@ -75,7 +75,38 @@ fn test_immediate_too_large() {
     let err = instr.encode().unwrap_err();
     assert!(matches!(
         err,
-        EncodeError::ImmediateOutOfRange { bits: 22, value: _ } //22 since LI takes register
-                                                                //immediate => 32-5-5 = 22
+        EncodeError::SignedImmediateOutOfRange { bits: 22, value: _ } //22 since LI takes register
+                                                                      //immediate => 32-5-5 = 22
+    ));
+}
+
+#[test]
+fn test_unsigned_immediate_too_large() {
+    let instr = ResolvedInstruction {
+        opcode: Opcode::JR,
+        // we need number that is too large for 27 bits
+        operands: vec![Operand::Immediate(1 << 30)],
+    };
+    let result = instr.encode();
+    assert!(result.is_err());
+    let err = instr.encode().unwrap_err();
+    assert!(matches!(
+        err,
+        EncodeError::UnsignedImmediateOutOfRange { bits: 27, value: _ } //27 since JR takes only immediate => 32-5 = 27
+    ));
+}
+
+#[test]
+fn test_negative_val_when_unsigned_expected() {
+    let instr = ResolvedInstruction {
+        opcode: Opcode::JR,
+        operands: vec![Operand::Immediate(-1)],
+    };
+    let result = instr.encode();
+    assert!(result.is_err());
+    let err = instr.encode().unwrap_err();
+    assert!(matches!(
+        err,
+        EncodeError::ExpectedUnsignedImmediate { bits: 27, value: _ } //27 since JR takes only immediate => 32-5 = 27
     ));
 }
