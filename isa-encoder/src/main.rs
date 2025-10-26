@@ -1,11 +1,9 @@
-mod assembler_types;
-mod encoder;
-mod errors;
-mod lexer;
-mod parser;
 use clap::*;
 use clap::{Parser as ClapParser, Subcommand};
+use isa_core::traits::Encodable;
 use isa_core::types::ResolvedInstruction;
+use isa_encoder::encoder::encode_program;
+use isa_encoder::{encoder, lexer, parser};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -128,7 +126,12 @@ fn check_file(input: &PathBuf) -> Result<(), String> {
     let source =
         fs::read_to_string(input).map_err(|e| format!("Failed to read input file: {}", e))?;
 
-    let _instructions = parse_source(&source)?;
+    let instructions = parse_source(&source)?;
+    for (line, instruction) in instructions.iter().enumerate() {
+        let _encoded = instruction
+            .encode()
+            .map_err(|e| format!("Error on instruction {}: {}", line + 1, e))?;
+    }
 
     Ok(())
 }

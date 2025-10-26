@@ -64,13 +64,13 @@ impl InstrFormat {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operand {
     Register(u8),     // 0..31
-    Immediate(usize), // Value that fits in the instruction format
+    Immediate(isize), // Value that fits in the instruction format
 }
 
 impl Operand {
-    pub fn get_val(self) -> usize {
+    pub fn get_val(self) -> isize {
         match self {
-            Self::Register(n) => n as usize,
+            Self::Register(n) => n as isize,
             Self::Immediate(n) => n,
         }
     }
@@ -104,6 +104,55 @@ impl Opcode {
             Opcode::JETV => "JETV",
             Opcode::NOP => "NOP",
             Opcode::END => "END",
+        }
+    }
+
+    pub const fn immediate_signedness(self, operand_index: usize) -> Option<bool> {
+        use Opcode::*;
+
+        match self {
+            // Arithmetic instructions - signed immediates
+            ADDI | SUBI => {
+                match operand_index {
+                    2 => Some(true), // Third operand is the immediate
+                    _ => None,
+                }
+            }
+
+            // Load immediate - signed (allows loading negative values)
+            LI => {
+                match operand_index {
+                    1 => Some(true), // Second operand is the immediate
+                    _ => None,
+                }
+            }
+
+            // Jump instructions - unsigned (instruction addresses)
+            JR => {
+                match operand_index {
+                    0 => Some(false), // Only operand is the jump address
+                    _ => None,
+                }
+            }
+
+            JEQ | JGT => {
+                match operand_index {
+                    2 => Some(false), // Third operand is the jump address
+                    _ => None,
+                }
+            }
+
+            // Value comparison + jump - mixed signedness!
+            JLTV | JETV => {
+                match operand_index {
+                    1 => Some(true),  // Second operand is comparison value (can be negative)
+                    2 => Some(false), // Third operand is jump address
+                    _ => None,
+                }
+            }
+
+            // Instructions with no immediates
+            ADD | SUB | MULT | OR | AND | NOT | LD | SD | NOP | END => None,
         }
     }
 

@@ -8,7 +8,7 @@ pub use isa_core::{types::InstrFormat, types::Opcode};
 #[derive(Debug, Clone)]
 pub enum UnresolvedOperand {
     Register(u8),     // 0..31
-    Immediate(usize), // -2^31..2^31-1
+    Immediate(isize), // -2^31..2^31-1
     LabelRef(String), // Label reference (resolved during assembly)
 }
 
@@ -139,7 +139,7 @@ impl InstrFormatValidator for InstrFormat {
                 &[OperandType::Reg, OperandType::Imm, OperandType::Imm],
             ),
             I => validate_pattern(ops, span, 1, &[OperandType::Imm]),
-            NoOP => Ok(()),
+            NoOP => validate_pattern(ops, span, 0, &[]),
         }
     }
 }

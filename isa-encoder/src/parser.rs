@@ -64,6 +64,9 @@ impl Parser {
                 }
             }
         }
+        if instructions.is_empty() {
+            return Err(ParseError::UnexpectedEndOfInput);
+        }
 
         // Second pass: resolve label references
         resolve_labels(&mut instructions, &labels)?;
@@ -145,7 +148,7 @@ fn resolve_labels(
         for op in instr.operands.iter_mut() {
             if let UnresolvedOperand::LabelRef(label) = op.as_ref() {
                 if let Some(&row_index) = labels.get(label) {
-                    *op.as_mut() = UnresolvedOperand::Immediate(row_index);
+                    *op.as_mut() = UnresolvedOperand::Immediate(row_index as isize);
                 } else {
                     return Err(ParseError::UndefinedLabel {
                         label: label.clone(),

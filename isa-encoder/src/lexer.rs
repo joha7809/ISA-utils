@@ -8,7 +8,7 @@ use crate::assembler_types::{self, Opcode};
 pub enum TokenKind {
     Opcode(Opcode),
     Register(usize),
-    Immediate(usize),
+    Immediate(isize),
     LabelDef(String), // e.g., "loop:" defines a label
     LabelRef(String), // e.g., used in a jump instruction
     Comma,
@@ -104,7 +104,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn skip_whitespace(&mut self) {
-        while let Some((idx, c)) = self.chars.peek() {
+        while let Some((_idx, c)) = self.chars.peek() {
             if c.is_whitespace() {
                 if *c == '\n' {
                     self.line += 1;
@@ -178,7 +178,7 @@ impl<'a> Lexer<'a> {
         }
 
         //TODO: Instead of unwraping return error, as it can overflow
-        let value = number.parse::<usize>().unwrap();
+        let value = number.parse::<isize>().unwrap();
         Token {
             kind: TokenKind::Immediate(value),
             span: (start, start + number.len(), self.line).into(),

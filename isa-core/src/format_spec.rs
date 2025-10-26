@@ -66,7 +66,7 @@ const I_SPEC: &[FieldSpec] = &[
 
 const NOOP_SPEC: &[FieldSpec] = &[
     FieldSpec::Opcode(OPCODE_RANGE),
-    FieldSpec::Immediate(IMM_27_RANGE), // Padding bits, set to 0
+    // FieldSpec::Immediate(IMM_27_RANGE), // Padding bits, set to 0
 ];
 
 /// Complete specification for an instruction format
