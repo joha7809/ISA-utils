@@ -435,7 +435,7 @@ fn test_roundtrip_negative_immediate() {
     ];
 
     let encoded = encode_program(&program);
-    if !encoded.is_ok() {
+    if encoded.is_err() {
         panic!("Encoding failed: {}", encoded.err().unwrap());
     }
     assert!(encoded.is_ok());

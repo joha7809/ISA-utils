@@ -205,6 +205,7 @@ mod tests {
     fn test_error_reporting() {
         let input = "
             ADD R1, R2
+            END
         ";
 
         let result = parse_source(input);

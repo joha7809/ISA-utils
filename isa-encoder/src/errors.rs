@@ -29,6 +29,7 @@ pub enum ParseError {
         span: Span,
     },
     InvalidInstruction,
+    NoENDOpcode,
 }
 
 impl ParseError {
@@ -89,6 +90,9 @@ impl ParseError {
             ParseError::InvalidInstruction => {
                 "Something went wrong when resolving an Insruction. This should never happen, as other errors should occur!"
                     .to_string()
+            }
+            ParseError::NoENDOpcode => {
+                "Parse Error: No END opcode found in the program".to_string()
             }
         }
     }
@@ -158,6 +162,9 @@ impl std::fmt::Display for ParseError {
                     f,
                     "Error happened at instruction resolving. This should never happen, contact the author!"
                 )
+            }
+            ParseError::NoENDOpcode => {
+                write!(f, "Parse Error: No END opcode found in the program")
             }
         }
     }

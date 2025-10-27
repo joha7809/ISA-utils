@@ -220,12 +220,15 @@ fn test_label_only_lines() {
         middle:
         end:
             NOP
+        
+        END
     ";
 
     let result = assemble_to_binary(source);
     assert!(result.is_ok());
     let binary = result.unwrap();
-    assert_eq!(binary.len(), 1); // All labels point to same NOP
+    assert_eq!(binary.len(), 2); // All labels point to same NOP, Assert there are only two
+    // instructions
 }
 
 #[test]

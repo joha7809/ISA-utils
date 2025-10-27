@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use isa_core::{consts::REGISTER_LIMIT, traits::ToResolvedInstr, types::ResolvedInstruction};
+use isa_core::{
+    consts::REGISTER_LIMIT,
+    traits::ToResolvedInstr,
+    types::{Opcode, ResolvedInstruction},
+};
 
 use crate::{
     assembler_types::{InstrFormatValidator, Spanned, UnresolvedInstruction, UnresolvedOperand},
@@ -10,12 +14,14 @@ use crate::{
 
 pub struct Parser {
     tokens: std::iter::Peekable<std::vec::IntoIter<Token>>,
+    end_found: bool,
 }
 /// Returns a vec of instructions.
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Parser {
             tokens: tokens.into_iter().peekable(),
+            end_found: false,
         }
     }
 
@@ -47,6 +53,11 @@ impl Parser {
                     }
                 }
                 TokenKind::Opcode(opcode) => {
+                    // Hacky solution, check if opcode END then set end_found to true
+                    if opcode == Opcode::END {
+                        self.end_found = true;
+                    }
+
                     let operands = self.parse_operands()?;
                     instructions.push(UnresolvedInstruction {
                         opcode: Spanned::new(opcode, token.span),
@@ -66,6 +77,10 @@ impl Parser {
         }
         if instructions.is_empty() {
             return Err(ParseError::UnexpectedEndOfInput);
+        }
+
+        if !self.end_found {
+            return Err(ParseError::NoENDOpcode);
         }
 
         // Second pass: resolve label references
