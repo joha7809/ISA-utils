@@ -82,7 +82,6 @@ impl Encodable for ResolvedInstruction {
                         let val = val as usize;
                         if !fits_in_unsigned_bits(val, range.width()) {
                             return Err(EncodeError::UnsignedImmediateOutOfRange {
-                                //TODO: Make a seperate error for immediate Signed and unsigned out of range
                                 bits: range.width(),
                                 value: val,
                             });
@@ -126,8 +125,11 @@ impl Decodable for u32 {
                     // Already extracted, skip
                 }
                 FieldSpec::Register(_) => {
-                    let reg = get_bits(word, bit_range.hi, bit_range.lo) as u8;
-                    operands.push(Operand::Register(reg));
+                    let reg_val = get_bits(word, bit_range.hi, bit_range.lo);
+                    if reg_val > REGISTER_LIMIT as u32 {
+                        return Err(EncodeError::RegisterOutOfRange(reg_val as u8));
+                    }
+                    operands.push(Operand::Register(reg_val as u8));
                 }
                 FieldSpec::Immediate(_) => {
                     let operand_index = index - 1;
