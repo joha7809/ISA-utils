@@ -200,3 +200,157 @@ impl std::fmt::Display for EncodeError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::traits::{Decodable, Encodable};
+    use crate::types::{Opcode, Operand, ResolvedInstruction};
+
+    #[test]
+    fn decode_binary() {
+        // LI R20, 573
+        // Correct encoding: opcode=9 (1001), R1=20, R2=0 (unused), Imm=573
+        // [31:28]=1001, [27:23]=10100, [22:18]=00000, [17:0]=000000001000111101
+        let input = 0b10011010000000000000001000111101 as u32;
+        let instruction = input.decode();
+        assert!(instruction.is_ok());
+        let instruction = instruction.unwrap();
+        assert_eq!(instruction.opcode.to_string(), "LI");
+        // LI uses RI format which only has 2 operands: register + immediate
+        // The unused register field is implicit (always 0) per ISA spec
+        assert_eq!(instruction.operands.len(), 2);
+        assert_eq!(instruction.operands[0].get_val(), 20);
+        assert_eq!(instruction.operands[1].get_val(), 573);
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_li() {
+        // Test LI instruction RI format, encoding and decoding
+        let instruction = ResolvedInstruction {
+            opcode: Opcode::LI,
+            operands: vec![Operand::Register(20), Operand::Immediate(573)],
+        };
+
+        let encoded = instruction.encode().expect("Failed to encode");
+        println!(
+            "LI R20, 573 encoded as: 0b{:032b} (0x{:08x})",
+            encoded, encoded
+        );
+
+        let decoded = encoded.decode().expect("Failed to decode");
+        assert_eq!(decoded.opcode, Opcode::LI);
+        assert_eq!(decoded.operands.len(), 2);
+        assert_eq!(decoded.operands[0].get_val(), 20);
+        assert_eq!(decoded.operands[1].get_val(), 573);
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_add() {
+        // Test ADD instruction (R3 format)
+        let instruction = ResolvedInstruction {
+            opcode: Opcode::ADD,
+            operands: vec![
+                Operand::Register(1),
+                Operand::Register(2),
+                Operand::Register(3),
+            ],
+        };
+
+        let encoded = instruction.encode().expect("Failed to encode");
+        println!(
+            "ADD R1, R2, R3 encoded as: 0b{:032b} (0x{:08x})",
+            encoded, encoded
+        );
+
+        let decoded = encoded.decode().expect("Failed to decode");
+        assert_eq!(decoded.opcode, Opcode::ADD);
+        assert_eq!(decoded.operands.len(), 3);
+        assert_eq!(decoded.operands[0].get_val(), 1);
+        assert_eq!(decoded.operands[1].get_val(), 2);
+        assert_eq!(decoded.operands[2].get_val(), 3);
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_addi() {
+        // Test ADDI instruction (RRI format)
+        let instruction = ResolvedInstruction {
+            opcode: Opcode::ADDI,
+            operands: vec![
+                Operand::Register(1),
+                Operand::Register(2),
+                Operand::Immediate(100),
+            ],
+        };
+
+        let encoded = instruction.encode().expect("Failed to encode");
+        println!(
+            "ADDI R1, R2, 100 encoded as: 0b{:032b} (0x{:08x})",
+            encoded, encoded
+        );
+
+        let decoded = encoded.decode().expect("Failed to decode");
+        assert_eq!(decoded.opcode, Opcode::ADDI);
+        assert_eq!(decoded.operands.len(), 3);
+        assert_eq!(decoded.operands[0].get_val(), 1);
+        assert_eq!(decoded.operands[1].get_val(), 2);
+        assert_eq!(decoded.operands[2].get_val(), 100);
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_jr() {
+        // Test JR instruction (I format - just immediate)
+        let instruction = ResolvedInstruction {
+            opcode: Opcode::JR,
+            operands: vec![Operand::Immediate(42)],
+        };
+
+        let encoded = instruction.encode().expect("Failed to encode");
+        println!("JR 42 encoded as: 0b{:032b} (0x{:08x})", encoded, encoded);
+
+        let decoded = encoded.decode().expect("Failed to decode");
+        assert_eq!(decoded.opcode, Opcode::JR);
+        assert_eq!(decoded.operands.len(), 1);
+        assert_eq!(decoded.operands[0].get_val(), 42);
+    }
+
+    #[test]
+    fn encode_decode_roundtrip_not() {
+        // Test NOT instruction (R2 format)
+        let instruction = ResolvedInstruction {
+            opcode: Opcode::NOT,
+            operands: vec![Operand::Register(5), Operand::Register(10)],
+        };
+
+        let encoded = instruction.encode().expect("Failed to encode");
+        println!(
+            "NOT R5, R10 encoded as: 0b{:032b} (0x{:08x})",
+            encoded, encoded
+        );
+
+        let decoded = encoded.decode().expect("Failed to decode");
+        assert_eq!(decoded.opcode, Opcode::NOT);
+        assert_eq!(decoded.operands.len(), 2);
+        assert_eq!(decoded.operands[0].get_val(), 5);
+        assert_eq!(decoded.operands[1].get_val(), 10);
+    }
+
+    #[test]
+    fn encode_negative_immediate() {
+        // Test encoding negative immediate in ADDI
+        let instruction = ResolvedInstruction {
+            opcode: Opcode::ADDI,
+            operands: vec![
+                Operand::Register(1),
+                Operand::Register(2),
+                Operand::Immediate(-50),
+            ],
+        };
+
+        let encoded = instruction
+            .encode()
+            .expect("Failed to encode negative immediate");
+        let decoded = encoded.decode().expect("Failed to decode");
+
+        assert_eq!(decoded.operands[2].get_val(), -50);
+    }
+}
