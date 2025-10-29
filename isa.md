@@ -15,21 +15,21 @@
 
 ## Data Transfer Instructions
 
-| Instruction    | Syntax (Example) | Meaning (Example) |
-| -------------- | ---------------- | ----------------- |
-| Load immediate | `LI R1, 6`       | `R1 = 6`          |
-| Load data      | `LD R1, R2`      | `R1 = memory(R2)` |
-| Store data     | `SD R1, R2`      | `memory(R2) = R1` |
+| Instruction    | Syntax (Example) | Meaning (Example)      |
+| -------------- | ---------------- | ---------------------- |
+| Load immediate | `LI R1, 6`       | `R1 = 6`               |
+| Load data      | `LD R1, R2`      | `R1 = read memory(R2)` |
+| Store data     | `SD R1, R2`      | `set memory(R2) = R1`  |
 
 ## Control and Flow Instructions
 
-| Instruction          | Syntax (Example) | Meaning (Example)            |
-| -------------------- | ---------------- | ---------------------------- |
-| Jump                 | `JR 7`           | `goto inst. 7`               |
-| Jump if equal        | `JEQ R2, R3, 8`  | `if (R2 == R3) goto inst. 8` |
-| Jump if greater than | `JGT R2, R3, 10` | `if (R2 > R3) goto inst. 10` |
-| No operation         | `NOP`            | do nothing                   |
-| End execution        | `END`            | terminates execution         |
+| Instruction    | Syntax (Example) | Meaning (Example)            |
+| -------------- | ---------------- | ---------------------------- |
+| Jump           | `JR 7`           | `goto inst. 7`               |
+| Jump if equal  | `JEQ R2, R3, 8`  | `if (R2 == R3) goto inst. 8` |
+| Jump less than | `JLT R2, R3, 10` | `if (R2 < R3) goto inst. 10` |
+| No operation   | `NOP`            | do nothing                   |
+| End execution  | `END`            | terminates execution         |
 
 ## Machine Code Types
 
@@ -56,7 +56,7 @@ Example:
 ```
 JEQ R1, R2 end
 start:          # This is a label
-    ADD R1, R2, R3
+    ADD R1, R2, R3;
     JEQ R1, R4, end
     SUB R1, R1, R5
 
