@@ -4,24 +4,22 @@ use strum_macros::{EnumIter, FromRepr};
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter, FromRepr)]
 pub enum Opcode {
-    NOP = 0b00000,
-    ADD = 0b00001,
-    SUB = 0b00010,
-    MULT = 0b00011,
-    ADDI = 0b00100,
-    SUBI = 0b00101,
-    OR = 0b00110,
-    NOT = 0b00111,
-    AND = 0b10000,
-    LI = 0b01000,
-    LD = 0b01001,
-    SD = 0b01010,
-    JR = 0b01011,
-    JEQ = 0b01100,
-    JLTV = 0b01101,
-    JGT = 0b01110,
-    JETV = 0b01111,
-    END = 0b11111,
+    NOP = 0b0000,
+    ADD = 0b0001,
+    SUB = 0b0010,
+    MULT = 0b0011,
+    ADDI = 0b0100,
+    SUBI = 0b0101,
+    OR = 0b0110,
+    NOT = 0b0111,
+    AND = 0b1000,
+    LI = 0b1001,
+    LD = 0b1010,
+    SD = 0b1011,
+    JR = 0b1100,
+    JEQ = 0b1101,
+    JLT = 0b1110,
+    END = 0b1111,
 }
 
 /// Decoded instruction - useful for VM
@@ -37,11 +35,12 @@ pub struct ResolvedInstruction {
 /// Instruction Formats, these are dependant on the opcode, and specify how the 32 bit word should
 /// be interpreted.
 pub enum InstrFormat {
+    // These InstrFormats are for validation, they each correspond to one of R, J or I, but with
+    // different bit placements.
     R2,   // opcode + reg + reg
     R3,   // opcode + reg + reg + reg
     RI,   // opcode + reg + imm
     RRI,  // opcode + reg + reg + imm
-    RII,  // opcode + reg + imm + imm
     I,    // opcode + imm
     NoOP, // opcode only
 }
@@ -53,7 +52,6 @@ impl InstrFormat {
             InstrFormat::R3 => 4,
             InstrFormat::RI => 3,
             InstrFormat::RRI => 4,
-            InstrFormat::RII => 4,
             InstrFormat::I => 2,
             InstrFormat::NoOP => 1,
         }
@@ -98,10 +96,8 @@ impl Opcode {
             Opcode::LD => "LD",
             Opcode::SD => "SD",
             Opcode::JR => "JR",
-            Opcode::JGT => "JGT",
             Opcode::JEQ => "JEQ",
-            Opcode::JLTV => "JLTV",
-            Opcode::JETV => "JETV",
+            Opcode::JLT => "JLT",
             Opcode::NOP => "NOP",
             Opcode::END => "END",
         }
@@ -135,7 +131,7 @@ impl Opcode {
                 }
             }
 
-            JEQ | JGT => {
+            JEQ => {
                 match operand_index {
                     2 => Some(false), // Third operand is the jump address
                     _ => None,
@@ -143,9 +139,8 @@ impl Opcode {
             }
 
             // Value comparison + jump - mixed signedness!
-            JLTV | JETV => {
+            JLT => {
                 match operand_index {
-                    1 => Some(true),  // Second operand is comparison value (can be negative)
                     2 => Some(false), // Third operand is jump address
                     _ => None,
                 }
@@ -167,9 +162,8 @@ impl Opcode {
             Opcode::LD | Opcode::SD => InstrFormat::R2,
             // Control flow
             Opcode::JR => InstrFormat::I,
-            Opcode::JLTV => InstrFormat::RII,
-            Opcode::JEQ | Opcode::JGT => InstrFormat::RRI,
-            Opcode::JETV => InstrFormat::RII,
+            Opcode::JLT => InstrFormat::RRI,
+            Opcode::JEQ => InstrFormat::RRI,
             Opcode::NOP | Opcode::END => InstrFormat::NoOP,
         }
     }
@@ -193,10 +187,8 @@ impl FromStr for Opcode {
             "LD" => LD,
             "SD" => SD,
             "JR" => JR,
-            "JGT" => JGT,
             "JEQ" => JEQ,
-            "JLTV" => JLTV,
-            "JETV" => JETV,
+            "JLT" => JLT,
             "NOP" => NOP,
             "END" => END,
             _ => return Err(()),

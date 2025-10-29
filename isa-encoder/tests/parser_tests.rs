@@ -42,7 +42,7 @@ fn test_label_backward_reference() {
     let input = "
         loop_start:
         ADDI R1, R1, 1
-        JGT R1, R2, loop_start
+        JLT R1, R2, loop_start
         END
     ";
 
@@ -51,12 +51,12 @@ fn test_label_backward_reference() {
     let instructions = result.unwrap();
     assert_eq!(instructions.len(), 3);
 
-    // JGT should reference instruction index 0 (loop_start)
-    assert_eq!(instructions[1].opcode, Opcode::JGT);
+    // JLT should reference instruction index 0 (loop_start)
+    assert_eq!(instructions[1].opcode, Opcode::JLT);
     if let Operand::Immediate(addr) = instructions[1].operands[2] {
         assert_eq!(addr, 0);
     } else {
-        panic!("Expected immediate operand for JGT");
+        panic!("Expected immediate operand for JLT");
     }
 }
 
@@ -194,7 +194,7 @@ fn test_all_rri_instructions() {
         ADDI R1, R2, 100
         SUBI R3, R4, 50
         JEQ R5, R6, 10
-        JGT R7, R8, 20
+        JLT R7, R8, 20
         END
     ";
 
@@ -206,26 +206,14 @@ fn test_all_rri_instructions() {
     assert_eq!(instructions[0].opcode, Opcode::ADDI);
     assert_eq!(instructions[1].opcode, Opcode::SUBI);
     assert_eq!(instructions[2].opcode, Opcode::JEQ);
-    assert_eq!(instructions[3].opcode, Opcode::JGT);
+    assert_eq!(instructions[3].opcode, Opcode::JLT);
     assert_eq!(instructions[4].opcode, Opcode::END);
 }
 
 #[test]
 fn test_all_rii_instructions() {
-    let input = "
-        JLTV R1, 100, 200
-        JETV R2, 300, 400
-        END
-    ";
-
-    let result = parse_source(input);
-    assert!(result.is_ok());
-    let instructions = result.unwrap();
-    assert_eq!(instructions.len(), 3);
-
-    assert_eq!(instructions[0].opcode, Opcode::JLTV);
-    assert_eq!(instructions[1].opcode, Opcode::JETV);
-    assert_eq!(instructions[2].opcode, Opcode::END);
+    // Note: The new ISA doesn't have RII format instructions (JLTV, JETV removed)
+    // This test is removed as these opcodes don't exist anymore
 }
 
 #[test]
@@ -302,8 +290,8 @@ fn test_complex_program_with_nested_labels() {
             LI R3, 0
         inner_loop:
             ADDI R3, R3, 1
-            JGT R3, R2, inner_loop
-            JGT R1, R2, outer_loop
+            JLT R3, R2, inner_loop
+            JLT R1, R2, outer_loop
         done:
             END
     ";

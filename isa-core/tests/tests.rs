@@ -65,7 +65,7 @@ fn test_bit_manipulation() {
 fn test_signed_immediate_too_large() {
     let instr = ResolvedInstruction {
         opcode: Opcode::LI,
-        // we need number that is too large for 22 bits
+        // we need number that is too large for 18 bits
         operands: vec![Operand::Register(0), Operand::Immediate(isize::MAX)],
     };
     let result = instr.encode();
@@ -75,8 +75,8 @@ fn test_signed_immediate_too_large() {
     let err = instr.encode().unwrap_err();
     assert!(matches!(
         err,
-        EncodeError::SignedImmediateOutOfRange { bits: 22, value: _ } //22 since LI takes register
-                                                                      //immediate => 32-5-5 = 22
+        EncodeError::SignedImmediateOutOfRange { bits: 18, value: _ } //18 since LI takes register
+                                                                      //immediate => 32-4-5-5 = 18 (opcode + reg + imm)
     ));
 }
 
@@ -84,7 +84,7 @@ fn test_signed_immediate_too_large() {
 fn test_unsigned_immediate_too_large() {
     let instr = ResolvedInstruction {
         opcode: Opcode::JR,
-        // we need number that is too large for 27 bits
+        // we need number that is too large for 28 bits
         operands: vec![Operand::Immediate(1 << 30)],
     };
     let result = instr.encode();
@@ -92,7 +92,7 @@ fn test_unsigned_immediate_too_large() {
     let err = instr.encode().unwrap_err();
     assert!(matches!(
         err,
-        EncodeError::UnsignedImmediateOutOfRange { bits: 27, value: _ } //27 since JR takes only immediate => 32-5 = 27
+        EncodeError::UnsignedImmediateOutOfRange { bits: 28, value: _ } //28 since JR takes only immediate => 32-4 = 28
     ));
 }
 
@@ -107,6 +107,6 @@ fn test_negative_val_when_unsigned_expected() {
     let err = instr.encode().unwrap_err();
     assert!(matches!(
         err,
-        EncodeError::ExpectedUnsignedImmediate { bits: 27, value: _ } //27 since JR takes only immediate => 32-5 = 27
+        EncodeError::ExpectedUnsignedImmediate { bits: 28, value: _ } //28 since JR takes only immediate => 32-4 = 28
     ));
 }
