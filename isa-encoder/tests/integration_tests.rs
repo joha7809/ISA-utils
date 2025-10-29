@@ -35,7 +35,7 @@ fn test_loop_program() {
         LI R2, 10
         loop:
             ADDI R1, R1, 1
-            JGT R1, R2, loop
+            JLT R1, R2, loop
         END
     ";
 
@@ -75,8 +75,8 @@ fn test_nested_loops() {
             LI R3, 0
         inner:
             ADDI R3, R3, 1
-            JGT R3, R2, inner
-            JGT R1, R2, outer
+            JLT R3, R2, inner
+            JLT R1, R2, outer
         END
     ";
 
@@ -109,9 +109,7 @@ fn test_all_opcodes_program() {
         # Control flow
         JR 20
         JEQ R27, R28, 21
-        JGT R29, R30, 22
-        JLTV R1, 100, 200
-        JETV R2, 300, 400
+        JLT R29, R30, 22
         
         # No-op
         NOP
@@ -121,7 +119,7 @@ fn test_all_opcodes_program() {
     let result = assemble_to_binary(source);
     assert!(result.is_ok());
     let binary = result.unwrap();
-    assert_eq!(binary.len(), 18); // Fixed count based on actual instructions
+    assert_eq!(binary.len(), 16); // Updated count without JGT, JLTV, JETV
 }
 
 #[test]
@@ -138,7 +136,7 @@ fn test_fibonacci_program() {
             ADD R1, R0, R2      # shift: n-2 = n-1
             ADD R2, R0, R5      # shift: n-1 = n
             ADDI R4, R4, 1      # increment counter
-            JGT R4, R3, fib_loop
+            JLT R4, R3, fib_loop
         END
     ";
 
@@ -156,14 +154,14 @@ fn test_max_of_three_numbers() {
         LI R3, 28
         
         ADD R4, R0, R1          # assume R1 is max
-        JGT R2, R4, r2_bigger   # if R2 > current max
+        JLT R4, R2, r2_bigger   # if R4 < R2 (i.e., R2 > current max)
         JR check_r3
         
         r2_bigger:
             ADD R4, R0, R2
         
         check_r3:
-            JGT R3, R4, r3_bigger
+            JLT R4, R3, r3_bigger
             JR done
         
         r3_bigger:
@@ -188,7 +186,7 @@ fn test_array_sum_simulation() {
         sum_loop:
             ADDI R1, R1, 10     # add value (simulated)
             ADDI R3, R3, 1      # increment index
-            JGT R3, R2, sum_loop
+            JLT R3, R2, sum_loop
         END
     ";
 
@@ -280,11 +278,11 @@ fn test_only_label_fails() {
 #[test]
 fn test_immediate_boundary_in_program() {
     let source = "
-        LI R1, 2097151      # Max 22-bit value
-        ADDI R2, R3, 65535  # Max 17-bit value
-        JR 67108863         # Max 27-bit value
-        LI   R4, -2097152      # Min 22-bit signed value  (-2^21)
-        ADDI R5, R6, -65536    # Min 17-bit signed value  (-2^16)
+        LI R1, 131071       # Max 18-bit signed value (2^17 - 1)
+        ADDI R2, R3, 131071 # Max 18-bit signed value (2^17 - 1)
+        JR 268435455        # Max 28-bit unsigned value (2^28 - 1)
+        LI   R4, -131072    # Min 18-bit signed value (-2^17)
+        ADDI R5, R6, -131072 # Min 18-bit signed value (-2^17)
 
         END
     ";
@@ -338,7 +336,7 @@ fn test_roundtrip_complex_program() {
         loop:
             ADDI R1, R1, 1
             MULT R3, R1, R2
-            JGT R1, R2, loop
+            JLT R1, R2, loop
         done:
             END
     ";

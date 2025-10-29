@@ -1,154 +1,270 @@
 # ISA Utils - Custom Assembly Language Toolchain
 
-A Cargo workspace containing a complete toolchain for a custom instruction set architecture (ISA), including assembler and virtual machine.
+A Cargo workspace containing a complete toolchain for a custom instruction set architecture (ISA), including core types, assembler, and virtual machine.
 
 ## Project Structure
 
 This project is organized as a Cargo workspace with three crates:
 
-- **isa-core/** - Shared library with `Opcode`, `InstrFormat`, `DecodedInstruction`, and encode/decode functions
-- **isa-encoder/** - Assembler that converts `.asm` files to binary machine code  
-- **isa-vm/** - Virtual machine for executing assembled programs
+- **isa-core/** - Core library with ISA types, instruction encoding/decoding, and format specifications
+- **isa-encoder/** - Assembler that parses `.asm` files and generates binary machine code
+- **isa-vm/** - Virtual machine for executing assembled programs _(unimplemented)_
 
-The shared `isa-core` library means both the assembler and VM can reuse all the opcode definitions and encoding/decoding logic.
+The shared `isa-core` library provides a single source of truth for opcode definitions, instruction formats, and encoding/decoding logic that is used by both the assembler and VM.
 
 ## Features
 
-- ✅ Full ISA support (arithmetic, logical, memory, and control flow instructions)
-- ✅ Label support for jumps and branches
-- ✅ Pretty error messages with source code context
-- ✅ Multiple output formats (binary, hex, txt)
-- ✅ Syntax checking without assembly
-- ✅ **Cargo workspace structure with three crates**
+- ✅ Full ISA support (16 instructions: arithmetic, logical, memory, and control flow)
+- ✅ 32-bit instruction encoding with multiple formats (R2, R3, RI, RRI, I, NoOP)
+- ✅ Label support for jump instructions
+- ✅ Signed and unsigned immediate values with proper two's complement encoding
+- ✅ Comprehensive error handling with detailed source context
+- ✅ Multiple output formats (text binary, hex, raw binary)
+- ✅ Syntax validation without assembly
+- ✅ Fully tested encoder and decoder with roundtrip verification
 
 ## Installation
 
 ```bash
+# Build all crates in the workspace
 cargo build --release
+
+# Build individual crates
+cargo build -p isa-core --release
+cargo build -p isa-encoder --release
+cargo build -p isa-vm --release
 ```
 
 ## Usage
 
-### Assemble a file
+### Assembler (isa-encoder)
+
+The assembler converts `.asm` assembly source files into binary machine code.
 
 ```bash
-# Generate text binary output (default)
-cargo run -p isa-encoder -- assemble -i example.asm -o output.bin
+# Generate text binary output (default) - human-readable 0s and 1s
+cargo run -p isa-encoder -- assemble -i examples/example.asm -o output.txt
 
-# Generate hex output
-cargo run -p isa-encoder -- assemble -i example.asm -o output.hex --format hex
+# Generate hex output - hexadecimal representation
+cargo run -p isa-encoder -- assemble -i examples/example.asm -o output.hex --format hex
 
-# Generate raw binary output
-cargo run -p isa-encoder -- assemble -i example.asm -o output.bin --format binary
+# Generate raw binary output - actual binary file for VM execution
+cargo run -p isa-encoder -- assemble -i examples/example.asm -o output.bin --format binary
 ```
 
-### Check syntax without assembling
+### Syntax Validation
+
+Check assembly syntax without generating output:
 
 ```bash
-cargo run -p isa-encoder -- check example.asm
+cargo run -p isa-encoder -- check examples/example.asm
 ```
 
-### VM Usage
+### Virtual Machine (isa-vm)
+
+⚠️ **The VM is currently unimplemented.** The basic structure exists but execution logic is not yet implemented.
+
+When completed, it will execute assembled binary programs:
 
 ```bash
-cargo run -p isa-vm <binary_file>
+cargo run -p isa-vm -- <binary_file>
 ```
 
-## For VM Implementation
+## ISA Specification
 
-Your VM can use `isa-core` to decode instructions:
+This toolchain implements a custom 32-bit RISC-style instruction set. For complete details, see [`isa.md`](isa.md).
 
-```rust
-use isa_core::{DecodedInstruction, Opcode, Operand};
+### Instruction Formats
 
-// Decode a 32-bit instruction word
-let instr = DecodedInstruction::decode(word)?;
+All instructions are 32 bits wide with the following encoding formats:
 
-// Execute based on opcode
-match instr.opcode {
-    Opcode::ADD => {
-        if let [Operand::Register(rd), Operand::Register(rs1), Operand::Register(rs2)] = 
-            instr.operands[..] {
-            registers[rd] = registers[rs1] + registers[rs2];
-        }
-    }
-    // ... other opcodes
-}
-```
+| Format   | Bit Layout                                          | Description               |
+| -------- | --------------------------------------------------- | ------------------------- |
+| **R3**   | `OPCODE(4) · REG(5) · REG(5) · REG(5) · unused(13)` | Three-register operations |
+| **R2**   | `OPCODE(4) · REG(5) · REG(5) · unused(18)`          | Two-register operations   |
+| **RRI**  | `OPCODE(4) · REG(5) · REG(5) · IMM(18)`             | Two registers + immediate |
+| **RI**   | `OPCODE(4) · REG(5) · unused(5) · IMM(18)`          | Register + immediate      |
+| **I**    | `OPCODE(4) · IMM(28)`                               | Immediate only (jumps)    |
+| **NoOP** | `OPCODE(4) · unused(28)`                            | No operands               |
 
-See `isa-vm/src/main.rs` for a starter template.
+### Resulting Formats
+
+When implementing the CPU in chisel, the above formats are treated as:
+
+| Format | Bit Layout                                          | Description               |
+| ------ | --------------------------------------------------- | ------------------------- |
+| **R**  | `OPCODE(4) · REG(5) · REG(5) · REG(5) · unused(13)` | Three-register operations |
+| **I**  | `OPCODE(4) · REG(5) · REG(5) · IMM(18)`             | Two registers + immediate |
+| **J**  | `OPCODE(4) · IMM(28)`                               | Immediate only (jumps)    |
+
+### Encoding Details
+
+- **Opcodes**: 4 bits `[31:28]` - 16 possible instructions
+- **Registers**: 5 bits each - 32 registers (R0-R31)
+- **Immediates**: Signed (two's complement) except for jump addresses which are unsigned
+- **Byte order**: Big-endian bit ordering
 
 ## Supported Instructions
 
-### Arithmetic
+### Arithmetic Operations
 
-- `ADD Rd, Rs1, Rs2` - Add two registers
-- `SUB Rd, Rs1, Rs2` - Subtract registers
-- `MULT Rd, Rs1, Rs2` - Multiply registers
-- `ADDI Rd, Rs, imm` - Add immediate
-- `SUBI Rd, Rs, imm` - Subtract immediate
+| Instruction | Syntax              | Description              | Format |
+| ----------- | ------------------- | ------------------------ | ------ |
+| `ADD`       | `ADD Rd, Rs1, Rs2`  | `Rd = Rs1 + Rs2`         | R3     |
+| `SUB`       | `SUB Rd, Rs1, Rs2`  | `Rd = Rs1 - Rs2`         | R3     |
+| `MULT`      | `MULT Rd, Rs1, Rs2` | `Rd = Rs1 * Rs2`         | R3     |
+| `ADDI`      | `ADDI Rd, Rs, imm`  | `Rd = Rs + imm` (signed) | RRI    |
+| `SUBI`      | `SUBI Rd, Rs, imm`  | `Rd = Rs - imm` (signed) | RRI    |
 
-### Logical
+### Logical Operations
 
-- `AND Rd, Rs1, Rs2` - Bitwise AND
-- `OR Rd, Rs1, Rs2` - Bitwise OR
-- `NOT Rd, Rs` - Bitwise NOT
+| Instruction | Syntax             | Description       | Format |
+| ----------- | ------------------ | ----------------- | ------ |
+| `AND`       | `AND Rd, Rs1, Rs2` | `Rd = Rs1 & Rs2`  | R3     |
+| `OR`        | `OR Rd, Rs1, Rs2`  | `Rd = Rs1 \| Rs2` | R3     |
+| `NOT`       | `NOT Rd, Rs`       | `Rd = ~Rs`        | R2     |
 
-### Memory
+### Data Transfer
 
-- `LI Rd, imm` - Load immediate
-- `LD Rd, Rs` - Load from memory
-- `SD Rs, Rd` - Store to memory
+| Instruction | Syntax       | Description                 | Format |
+| ----------- | ------------ | --------------------------- | ------ |
+| `LI`        | `LI Rd, imm` | `Rd = imm` (load immediate) | RI     |
+| `LD`        | `LD Rd, Rs`  | `Rd = memory[Rs]`           | R2     |
+| `SD`        | `SD Rs, Rd`  | `memory[Rd] = Rs`           | R2     |
 
 ### Control Flow
 
-- `JR imm` - Jump to address
-- `JEQ Rs1, Rs2, imm` - Jump if equal
-- `JLTV Rd, imm1, imm2` - Jump if less than value
-- `JGT Rs1, Rs2, imm` - Jump if greater than
-- `JETV Rd, imm1, imm2` - Jump if equal to value
-- `NOP` - No operation
-- `END` - End program
+| Instruction | Syntax               | Description          | Format |
+| ----------- | -------------------- | -------------------- | ------ |
+| `JR`        | `JR addr`            | Jump to address      | I      |
+| `JEQ`       | `JEQ Rs1, Rs2, addr` | Jump if `Rs1 == Rs2` | RRI    |
+| `JLT`       | `JLT Rs1, Rs2, addr` | Jump if `Rs1 < Rs2`  | RRI    |
+| `NOP`       | `NOP`                | No operation         | NoOP   |
+| `END`       | `END`                | Halt execution       | NoOP   |
 
 ### Labels
 
-Labels can be defined with a colon and referenced in jump instructions:
+Labels are defined with a colon and can be used as jump targets:
 
 ```assembly
-loop_start:
+start:
+    LI R1, 0
+    LI R2, 10
+
+loop:
     ADDI R1, R1, 1
-    JGT R1, R2, loop_start
+    JLT R1, R2, loop
+
+end:
+    END
 ```
 
-## Error Reporting
+During assembly, labels are resolved to instruction addresses.
 
-The assembler provides detailed error messages with source context:
+## Error Handling
+
+The assembler provides detailed error messages with source code context:
 
 ```
 Parse Error: Operand count mismatch, expected 3, found 2
   |
 3 | ADD R3, R1
-  | ^^^ wrong number of operands
+  | ^^^^^^^^^^ wrong number of operands
 ```
 
-## Testing
+Error types include:
+
+- **Syntax errors**: Invalid instruction format, operand count mismatches
+- **Type errors**: Register used where immediate expected, etc.
+- **Range errors**: Immediate values out of range for bit width
+- **Reference errors**: Undefined labels, invalid register numbers
+
+## Development
+
+### Testing
+
+The project has comprehensive test coverage for encoding, decoding, and parsing:
 
 ```bash
-# Test everything
+# Run all tests in the workspace
 cargo test --workspace
 
 # Test individual crates
-cargo test -p isa-core
-cargo test -p isa-encoder
-cargo test -p isa-vm
+cargo test -p isa-core      # Core types and codec tests
+cargo test -p isa-encoder   # Parser and assembler tests
+cargo test -p isa-vm        # VM tests (when implemented)
+
+# Run with output
+cargo test -- --nocapture
 ```
 
-## Examples
+Test coverage includes:
 
-- `erosion.asm` - Erosion algorithm implementation
-- `sieve.asm` - Sieve of Eratosthenes
+- Instruction encoding/decoding roundtrip tests
+- All instruction format verification
+- Signed and unsigned immediate handling
+- Parser error cases and edge conditions
+- Label resolution
+
+### Project Structure Details
+
+```
+isa-utils/
+├── isa-core/           # Core library
+│   ├── src/
+│   │   ├── bits.rs           # Bit manipulation utilities
+│   │   ├── codec.rs          # Encoding/decoding implementation
+│   │   ├── consts.rs         # Constants (register limits, etc.)
+│   │   ├── format_spec.rs    # Instruction format specifications
+│   │   ├── traits.rs         # Encodable/Decodable traits
+│   │   └── types.rs          # Core types (Opcode, Operand, etc.)
+│   └── Cargo.toml
+├── isa-encoder/        # Assembler
+│   ├── src/
+│   │   ├── main.rs           # CLI entry point
+│   │   ├── parser.rs         # Assembly parser
+│   │   └── errors.rs         # Error types
+│   └── Cargo.toml
+├── isa-vm/             # Virtual machine (unimplemented)
+│   ├── src/
+│   │   ├── main.rs           # VM entry point
+│   │   ├── vm.rs             # VM state and execution
+│   │   ├── memory.rs         # Memory implementation
+│   │   └── executor.rs       # Instruction executor
+│   └── Cargo.toml
+├── examples/           # Example assembly programs
+│   ├── example.asm
+│   ├── erosion.asm
+│   └── sieve.asm
+├── isa.md             # Complete ISA specification
+└── README.md
+```
+
+## Example Programs
+
+The `examples/` directory contains sample assembly programs:
+
+- **example.asm** - Basic syntax examples
+- **erosion.asm** - Image erosion algorithm implementation
+- **sieve.asm** - Sieve of Eratosthenes (prime number generation)
+
+Assemble an example:
 
 ```bash
-cargo run -p isa-encoder -- assemble -i erosion.asm
-cargo run -p isa-encoder -- assemble -i sieve.asm
+cargo run -p isa-encoder -- assemble -i examples/erosion.asm -o erosion.txt
+cargo run -p isa-encoder -- assemble -i examples/sieve.asm -o sieve.bin --format binary
 ```
+
+## Virtual Machine Implementation Status
+
+The `isa-vm` crate contains the basic structure for a virtual machine but is **not yet implemented**.
+
+### Planned VM Features
+
+- Instruction fetch and decode using `isa-core`
+- Register file (32 registers)
+- Memory system (configurable size)
+- Instruction execution loop
+- Program counter management
+- Jump/branch handling
+- Debug mode with instruction tracing

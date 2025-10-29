@@ -132,12 +132,6 @@ impl InstrFormatValidator for InstrFormat {
                 3,
                 &[OperandType::Reg, OperandType::Reg, OperandType::Imm],
             ),
-            RII => validate_pattern(
-                ops,
-                span,
-                3,
-                &[OperandType::Reg, OperandType::Imm, OperandType::Imm],
-            ),
             I => validate_pattern(ops, span, 1, &[OperandType::Imm]),
             NoOP => validate_pattern(ops, span, 0, &[]),
         }

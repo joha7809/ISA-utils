@@ -42,6 +42,30 @@ Below are the different formats of machine code instructions, showing how bits a
 | **J**    | `OPCODE(4)` · `IMMEDIATE(28)`                                 |
 
 > 💡 _All bit widths are shown in parentheses. "IMMEDIATE" fields represent literal constant values encoded directly in the instruction._
+> **Note:**  
+> `LI` is of type **I**, where the second register is simply encoded as `00000`.  
+> `NOT`, `LD`, and `SD` are of type **R**, where the last register is encoded as `0`.
+
+## OPCODE Bytes
+
+| Instruction | OPCODE (binary) |
+| ----------- | --------------- |
+| NOP         | `0b0000`        |
+| ADD         | `0b0001`        |
+| SUB         | `0b0010`        |
+| MULT        | `0b0011`        |
+| ADDI        | `0b0100`        |
+| SUBI        | `0b0101`        |
+| OR          | `0b0110`        |
+| NOT         | `0b0111`        |
+| AND         | `0b1000`        |
+| LI          | `0b1001`        |
+| LD          | `0b1010`        |
+| SD          | `0b1011`        |
+| JR          | `0b1100`        |
+| JEQ         | `0b1101`        |
+| JLT         | `0b1110`        |
+| END         | `0b1111`        |
 
 ## Signed vs Unsigned immediates
 

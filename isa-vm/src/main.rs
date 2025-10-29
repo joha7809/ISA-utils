@@ -1,6 +1,11 @@
 // Virtual Machine for the custom ISA
 // Use the shared isa-core library for instruction decoding
 
+mod errors;
+mod executor;
+mod memory;
+mod vm;
+
 fn main() {
     println!("ISA Virtual Machine");
     println!("TODO: Implement VM");

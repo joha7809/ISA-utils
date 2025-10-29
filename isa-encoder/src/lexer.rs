@@ -339,52 +339,6 @@ mod tests {
     }
 
     #[test]
-    fn test_control_flow() {
-        let input = "
-            JR 10
-            JEQ 12, R1, R2
-            JLTV 15, R3, R4
-            JGT 20, R5, R6
-            JETV 25, R7, 50
-            NOP
-            END
-        ";
-
-        let expected = vec![
-            TokenKind::Opcode(Opcode::JR),
-            TokenKind::Immediate(10),
-            TokenKind::Opcode(Opcode::JEQ),
-            TokenKind::Immediate(12),
-            TokenKind::Comma,
-            TokenKind::Register(1),
-            TokenKind::Comma,
-            TokenKind::Register(2),
-            TokenKind::Opcode(Opcode::JLTV),
-            TokenKind::Immediate(15),
-            TokenKind::Comma,
-            TokenKind::Register(3),
-            TokenKind::Comma,
-            TokenKind::Register(4),
-            TokenKind::Opcode(Opcode::JGT),
-            TokenKind::Immediate(20),
-            TokenKind::Comma,
-            TokenKind::Register(5),
-            TokenKind::Comma,
-            TokenKind::Register(6),
-            TokenKind::Opcode(Opcode::JETV),
-            TokenKind::Immediate(25),
-            TokenKind::Comma,
-            TokenKind::Register(7),
-            TokenKind::Comma,
-            TokenKind::Immediate(50),
-            TokenKind::Opcode(Opcode::NOP),
-            TokenKind::Opcode(Opcode::END),
-        ];
-
-        assert_eq!(lex_tokens(input), expected);
-    }
-
-    #[test]
     fn test_labels_and_comments() {
         let input = "
             start:
