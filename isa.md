@@ -23,15 +23,29 @@
 
 ## Control and Flow Instructions
 
-| Instruction          | Syntax (Example)  | Meaning (Example)             |
-| -------------------- | ----------------- | ----------------------------- |
-| Jump                 | `JR 7`            | `goto inst. 7`                |
-| Jump if equal        | `JEQ R2, R3, 8`   | `if (R2 == R3) goto inst. 8`  |
-| Jump if less than    | `JLTV R2, 19, 9`  | `if (R2 < 19) goto inst. 9`   |
-| Jump if greater than | `JGT R2, R3, 10`  | `if (R2 > R3) goto inst. 10`  |
-| Jump if eq. to value | `JETV R2, 10, 15` | `if (R2 == 10) goto inst. 15` |
-| No operation         | `NOP`             | do nothing                    |
-| End execution        | `END`             | terminates execution          |
+| Instruction          | Syntax (Example) | Meaning (Example)            |
+| -------------------- | ---------------- | ---------------------------- |
+| Jump                 | `JR 7`           | `goto inst. 7`               |
+| Jump if equal        | `JEQ R2, R3, 8`  | `if (R2 == R3) goto inst. 8` |
+| Jump if greater than | `JGT R2, R3, 10` | `if (R2 > R3) goto inst. 10` |
+| No operation         | `NOP`            | do nothing                   |
+| End execution        | `END`            | terminates execution         |
+
+## Machine Code Types
+
+Below are the different formats of machine code instructions, showing how bits are allocated for each field.
+
+| **Type** | **Format (Bit Allocation)**                                   |
+| :------- | :------------------------------------------------------------ |
+| **R**    | `OPCODE(4)` · `REGISTER(5)` · `REGISTER(5)` · `REGISTER(5)`   |
+| **I**    | `OPCODE(4)` · `REGISTER(5)` · `REGISTER(5)` · `IMMEDIATE(18)` |
+| **J**    | `OPCODE(4)` · `IMMEDIATE(28)`                                 |
+
+> 💡 _All bit widths are shown in parentheses. "IMMEDIATE" fields represent literal constant values encoded directly in the instruction._
+
+## Signed vs Unsigned immediates
+
+All immediates except the immediate in a jump instruction are signed. This is enforced by the encoder.
 
 ## Labels
 
@@ -49,18 +63,3 @@ start:          # This is a label
 end:            # Another label
     END
 ```
-
-# Machine Code Types
-
-Below are the different formats of machine code instructions, showing how bits are allocated for each field.
-
-| **Type** | **Format (Bit Allocation)**                                     |
-| :------- | :-------------------------------------------------------------- |
-| **R2**   | `OPCODE(5)` · `REGISTER(5)` · `REGISTER(5)`                     |
-| **R3**   | `OPCODE(5)` · `REGISTER(5)` · `REGISTER(5)` · `REGISTER(5)`     |
-| **RI**   | `OPCODE(5)` · `REGISTER(5)` · `IMMEDIATE(22)`                   |
-| **RRI**  | `OPCODE(5)` · `REGISTER(5)` · `REGISTER(5)` · `IMMEDIATE(17)`   |
-| **RII**  | `OPCODE(5)` · `REGISTER(5)` · `IMMEDIATE(11)` · `IMMEDIATE(11)` |
-| **I**    | `OPCODE(5)` · `IMMEDIATE(27)`                                   |
-
-> 💡 _All bit widths are shown in parentheses. "IMMEDIATE" fields represent literal constant values encoded directly in the instruction._
