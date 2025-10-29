@@ -21,6 +21,8 @@ const IMM_18_RANGE: BitRange = BitRange::new(17, 0); // RRI format: 18 bits
 // =========================================================================================
 // Format specifications as static slices.
 // These specify what each machine instrcution type expect of arguments and their bit ranges
+// The ISA specifies 3 formats, however for encoding/decoding we will expand upon these.
+// Each of the following spec are still a part of the ISA's 3 formats: R, I and J.
 // =========================================================================================
 
 const R2_SPEC: &[FieldSpec] = &[
