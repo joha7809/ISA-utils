@@ -72,7 +72,7 @@ impl Encodable for ResolvedInstruction {
                     } else {
                         // Value is unsigned, we can extract it directly
                         // first check if number is negative
-                        let val = operand.get_val(); // returns isize so convert to usize
+                        let val = operand.get_val();
                         if val < 0 {
                             return Err(EncodeError::ExpectedUnsignedImmediate {
                                 bits: range.width(),
