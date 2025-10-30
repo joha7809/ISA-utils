@@ -1,6 +1,7 @@
 pub enum VMError {
     InvalidMemoryAdress(usize),
     InstructionOutOfRange(usize),
+    NegativeMemoryAdress(isize),
 }
 
 impl std::fmt::Display for VMError {
@@ -11,6 +12,9 @@ impl std::fmt::Display for VMError {
             }
             VMError::InstructionOutOfRange(pc) => {
                 write!(f, "Program counter out of range: {}", pc)
+            }
+            VMError::NegativeMemoryAdress(addr) => {
+                write!(f, "Negative memory adress accessed: {}", addr)
             }
         }
     }

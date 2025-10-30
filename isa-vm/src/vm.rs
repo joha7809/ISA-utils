@@ -11,6 +11,7 @@ pub struct VM<M: Memory, E: Executor<M>> {
 pub struct VMState<M: Memory> {
     pub registers: [i32; 32],
     pub memory: M,
+    pub mem_size: usize,
     pub program: Vec<ResolvedInstruction>,
     pub pc: usize,
     pub halted: bool,
