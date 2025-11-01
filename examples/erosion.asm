@@ -11,7 +11,7 @@ xLoop:
 LI    R6, 0            #y = 0
 yLoop:
 MULT     R7, R5, R2;        # R7 = current row/coloumn idk
-ADD     R8, R5, R7;          # R8 = current pixel
+ADD     R8, R6, R7;          # R8 = current pixel
 
 JEQ     R5, R0, erode;        # Is it on a boarder
 JEQ     R5, R3, erode;
@@ -52,7 +52,7 @@ SD         R0, R8;         # Set current pixel to 0      “SCPT0”
 
 loops:
 ADDI    R6, R6, 1;            #Loops
-JLT     R6, R3, yLoop;        #Loop y
+JLT     R6, R2, yLoop;        #Loop y
 ADDI    R5, R5, 1;  
-JLT     R5, R3, xLoop;        #Loop x         
+JLT     R5, R2, xLoop;        #Loop x         
 END;
