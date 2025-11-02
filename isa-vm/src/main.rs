@@ -3,6 +3,7 @@
 
 mod errors;
 mod executor;
+mod image;
 mod memory;
 mod vm;
 
@@ -20,7 +21,8 @@ fn main() {
     println!("=== ISA Virtual Machine ===\n");
 
     // Read binary file
-    let filename = "/Users/johannessigvardsen/Files/Projects/Fun/rust-projects/isa-utils/examples/first_n_primes.txt";
+    let filename =
+        "/Users/johannessigvardsen/Files/Projects/Fun/rust-projects/isa-utils/examples/erosion.txt";
     println!("Reading program from {}...", filename);
 
     let file = File::open(filename).expect("Failed to open program file");
@@ -52,7 +54,8 @@ fn main() {
     println!("Decoded {} instructions\n", program.len());
 
     // Create memory and VM state
-    let memory = DynamicMemory::new(900);
+    // let memory = DynamicMemory::new(900);
+    let memory = DynamicMemory::from_data(800, 0, &image::CELLS_IMAGE);
     let mem_size = memory.size();
 
     let state = VMState {
@@ -96,10 +99,19 @@ fn main() {
         println!("R{}: {}", i, vm.state.registers[i]);
     }
 
-    // Print first 10 memory addresses
-    println!("\n=== Memory State (first 100 addresses) ===");
-    for i in 0..800 {
-        println!("M[{}]: {}", i, vm.state.memory.read(i));
+    // // Print first 10 memory addresses
+    // println!("\n=== Memory State (first 800 addresses) ===");
+    // for i in 0..800 {
+    //     println!("M[{}]: {}", i, vm.state.memory.read(i));
+    // }
+
+    // print it as a grid, memory 400-799 is the result of a 20x20 matrix
+    for row in 0..20 {
+        for col in 0..20 {
+            let addr = 400 + row * 20 + col;
+            print!("{:4} ", vm.state.memory.read(addr));
+        }
+        println!();
     }
 
     println!("\n=== Execution Complete ===");

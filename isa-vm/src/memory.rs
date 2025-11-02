@@ -38,6 +38,20 @@ impl DynamicMemory {
             data: vec![0; size],
         }
     }
+
+    pub fn new_with_default(size: usize, default: i32) -> Self {
+        Self {
+            data: vec![default; size],
+        }
+    }
+
+    pub fn from_data(size: usize, default: i32, data: &[i32]) -> Self {
+        let mut memory = vec![default; size];
+        for (i, val) in data.iter().enumerate() {
+            memory[i] = *val;
+        }
+        Self { data: memory }
+    }
 }
 
 impl Memory for DynamicMemory {
