@@ -43,9 +43,6 @@ SD         R1, R8;            # Set current pixel to 255 “SCPT255”
 JR         loops
 
 erode:
-ADD     R8, R8, R4;         # Get correct index for new image
-SD         R0, R8;         # Set current pixel to 0      “SCPT0”
-
 loops:
 ADDI    R6, R6, 1;            #Loops
 JLT     R6, R3, yLoop;        #Loop y
